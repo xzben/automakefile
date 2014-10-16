@@ -25,7 +25,8 @@ OUTPUT_DIR	= ./output/
 OUTPUT_TYPE	= 1
 #生文件的名字，不包括后缀
 OUTPUT_NAME	= output
-
+# 需要扩展编译的子目录，每个目录以空格隔开
+SUB_DIRS	= 
 #使用的编译器
 CC		= g++
 ######################################################################
@@ -49,8 +50,11 @@ OUTPUT_FULL_NAME =\
 $(strip $(OUTPUT_DIR))$(shell if [ 2 -eq $(OUTPUT_TYPE) -o 3 -eq $(OUTPUT_TYPE) ];then echo -n "lib";fi)$(strip $(OUTPUT_NAME)).$(shell if [ 1 -eq $(OUTPUT_TYPE) ];then echo -n "out";elif [ 2 -eq $(OUTPUT_TYPE) ];then echo -n "a";elif [ 3 -eq $(OUTPUT_TYPE) ];then echo -n "so";fi)
 #需要编译的文件名，文件间用空格分隔
 FILES		= $(shell ls *.c*) 	
+
+obj_file    = $(addprefix $(BIN_DIR), $(patsubst %.c, %.o, $(patsubst %.cpp, %.o, $(shell ls $(1)*.c*))))
 #所有生成的obj名字
-OBJECTS		= $(addprefix $(BIN_DIR), $(patsubst %.cpp,%.o,$(shell ls *.c*)))
+OBJECTS		= $(call obj_file,)
+OBJECTS	       += $(foreach dirname, $(SUB_DIRS), $(call obj_file,$(dirname)))
 #######################################################
 
 all:pre_command $(OBJECTS)
