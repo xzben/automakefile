@@ -5,26 +5,26 @@
 #######################################################
 # 配置参数
 # 是否使用C++11 特性
-USE_Cplusplus11 	= 1
+USE_Cplusplus11 	= 0
 #为程序指定预编译宏，每个宏之间用空格隔开
 PRE_MARCO 	= LINUX_MACRO		
 #扩展包含头文件目录，每个目录之间用空格隔开
 ADD_INCLUDE 	= ./include/ ./lib/
 #扩展的库目录引用目录，每个目录之间用空格隔开
-ADD_LIBDIR	= ./lib/
-#要包含的库名，每个库名用空格隔开
-ADD_LIB		= output
+ADD_LIBDIR	= ./output/ ./lib/
+#要包含的库名，每个库名用空格隔开(库名字需要些lib前缀和后缀.a或.so)
+ADD_LIB		= testso
 #编译生存的obj文件存放路径
 BIN_DIR		= ./bin/
 #生成输出目录
-OUTPUT_DIR	= ./output/
+OUTPUT_DIR	= ./
 #生成的output的类型
 # 1 代表生成可执行文件
 # 2 代表生成静态库文件
 # 3 代表生存动态库文件
 OUTPUT_TYPE	= 1
 #生文件的名字，不包括后缀
-OUTPUT_NAME	= output
+OUTPUT_NAME	= main
 # 需要扩展编译的子目录，每个目录以空格隔开
 SUB_DIRS	= 
 #使用的编译器
@@ -46,8 +46,11 @@ FLAGS_LINK	= $(FLAGS)
 #####################################################################
 #完整的输出名字
 #strip 是去掉字符串两头的空格
+
 OUTPUT_FULL_NAME =\
 $(strip $(OUTPUT_DIR))$(shell if [ 2 -eq $(OUTPUT_TYPE) -o 3 -eq $(OUTPUT_TYPE) ];then echo -n "lib";fi)$(strip $(OUTPUT_NAME)).$(shell if [ 1 -eq $(OUTPUT_TYPE) ];then echo -n "out";elif [ 2 -eq $(OUTPUT_TYPE) ];then echo -n "a";elif [ 3 -eq $(OUTPUT_TYPE) ];then echo -n "so";fi)
+
+
 #需要编译的文件名，文件间用空格分隔
 FILES		= $(shell ls *.c*) 	
 
@@ -63,9 +66,9 @@ all:pre_command $(OBJECTS)
 	elif [ 2 -eq $(OUTPUT_TYPE) ];then\
 		ar crs $(OUTPUT_FULL_NAME) $(OBJECTS);\
 	elif [ 3 -eq $(OUTPUT_TYPE) ];then\
-		$(CC) -shared -o $(OUTPUT_FULL_NAME) $(OBJECTS);\
+		$(CC) -fPIC -shared -o $(OUTPUT_FULL_NAME) $(OBJECTS);\
 	else \
-		@echo "请选择选择正确 OUTPUT_TYPE";\
+		echo "请选择选择正确 OUTPUT_TYPE";\
 	fi
 
 #先处理创建一些必要的目录
@@ -75,18 +78,18 @@ pre_command:
 
 #自动匹配 OBJECTS 中需要的 *.o 目标文件	
 $(BIN_DIR)%.o: %.c*
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CC) $(FLAGS) -c -fPIC $< -o $@
 
 #指定伪目标
 .PHONY:clean clean_objs
 
 #清除所有的生成文件，包括输出文件和生成的obj文件
 clean:
-	-rm $(OUTPUT_FULL_NAME) $(OBJECTS)
+	-rm -f $(OUTPUT_FULL_NAME) $(OBJECTS)
 
 #只清除生成obj文件，不删除生成的输出文件
 clean_objs:
-	-rm $(OBJECTS)
+	-rm -f $(OBJECTS)
 
 echo:
 	echo $(OBJECTS)

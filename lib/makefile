@@ -1,32 +1,32 @@
+######################################################
+#使用说明:
+# 本makefile是一个智能的makefile文件，只需要配置好你项目中的
+# 一些特定参数，然后将makefile文件和源码发在一个目录执行make命令就可以了。
 #######################################################
 # 配置参数
 # 是否使用C++11 特性
-USE_Cplusplus11 	= 1
-#预编译宏每个宏之间用空格隔开
-PRE_MARCO 	= LINUX_MACRO	LINUX_MACRO_TWO	
-#扩展包含头文件目录
-ADD_INCLUDE 	=
-#扩展的库目录引用目录
+USE_Cplusplus11 	= 0
+#为程序指定预编译宏，每个宏之间用空格隔开
+PRE_MARCO 	=		
+#扩展包含头文件目录，每个目录之间用空格隔开
+ADD_INCLUDE = 
+#扩展的库目录引用目录，每个目录之间用空格隔开
 ADD_LIBDIR	=
-#要包含的库名
+#要包含的库名，每个库名用空格隔开(库名字需要些lib前缀和后缀.a或.so)
 ADD_LIB		=
 #编译生存的obj文件存放路径
-BIN_DIR		=
+BIN_DIR		= ../bin/
 #生成输出目录
-OUTPUT_DIR	=
+OUTPUT_DIR	= ../output/
 #生成的output的类型
 # 1 代表生成可执行文件
 # 2 代表生成静态库文件
 # 3 代表生存动态库文件
-OUTPUT_TYPE	= 3
+OUTPUT_TYPE	= 2
 #生文件的名字，不包括后缀
-OUTPUT_NAME	= output
-
-#####################################################################
-#完整的输出名字
-#strip 是去掉字符串两头的空格
-OUTPUT_FULL_NAME =\
-$(strip $(OUTPUT_DIR))$(shell if [ 2 -eq $(OUTPUT_TYPE) -o 3 -eq $(OUTPUT_TYPE) ];then echo -n "lib";fi)$(strip $(OUTPUT_NAME)).$(shell if [ 1 -eq $(OUTPUT_TYPE) ];then echo -n "out";elif [ 2 -eq $(OUTPUT_TYPE) ];then echo -n "a";elif [ 3 -eq $(OUTPUT_TYPE) ];then echo -n "so";fi)
+OUTPUT_NAME	= testso
+# 需要扩展编译的子目录，每个目录以空格隔开
+SUB_DIRS	= 
 #使用的编译器
 CC		= g++
 ######################################################################
@@ -39,13 +39,23 @@ FLAGS		= \
  $(addprefix -l, $(ADD_LIB))\
 
 ################################################################
-
 #这个参数是FLAGS的扩展，主要是针对output文件生存的配置，		
 FLAGS_LINK	= $(FLAGS)
- #需要编译的文件名，文件间用空格分隔
+#####################################################################
+# 	手动配置参数到此为止，下面的参数不许要配置了。
+#####################################################################
+#完整的输出名字
+#strip 是去掉字符串两头的空格
+OUTPUT_FULL_NAME =\
+$(strip $(OUTPUT_DIR))$(shell if [ 2 -eq $(OUTPUT_TYPE) -o 3 -eq $(OUTPUT_TYPE) ];then echo -n "lib";fi)$(strip $(OUTPUT_NAME)).$(shell if [ 1 -eq $(OUTPUT_TYPE) ];then echo -n "out";elif [ 2 -eq $(OUTPUT_TYPE) ];then echo -n "a";elif [ 3 -eq $(OUTPUT_TYPE) ];then echo -n "so";fi)
+
+#需要编译的文件名，文件间用空格分隔
 FILES		= $(shell ls *.c*) 	
+
+obj_file    = $(addprefix $(BIN_DIR), $(patsubst %.c, %.o, $(patsubst %.cpp, %.o, $(shell ls $(1)*.c*))))
 #所有生成的obj名字
-OBJECTS		= $(addprefix $(BIN_DIR), $(patsubst %.cpp,%.o,$(shell ls *.c*)))
+OBJECTS		= $(call obj_file,)
+OBJECTS	       += $(foreach dirname, $(SUB_DIRS), $(call obj_file,$(dirname)))
 #######################################################
 
 all:pre_command $(OBJECTS)
@@ -53,10 +63,13 @@ all:pre_command $(OBJECTS)
 		$(CC) -o $(OUTPUT_FULL_NAME) $(OBJECTS) $(FLAGS_LINK) ;\
 	elif [ 2 -eq $(OUTPUT_TYPE) ];then\
 		ar crs $(OUTPUT_FULL_NAME) $(OBJECTS);\
+		echo "生成静态库"$(OUTPUT_FULL_NAME);\
 	elif [ 3 -eq $(OUTPUT_TYPE) ];then\
-		$(CC) -shared -o $(OUTPUT_FULL_NAME) $(OBJECTS);\
+		echo $(CC) -fPIC -shared -o $(OUTPUT_FULL_NAME) $(OBJECTS);\
+		$(CC) -fPIC -shared -o $(OUTPUT_FULL_NAME) $(OBJECTS);\
+		echo "生成动态库 "$(OUTPUT_FULL_NAME);\
 	else \
-		@echo "请选择选择正确 OUTPUT_TYPE";\
+		echo "请选择选择正确 OUTPUT_TYPE";\
 	fi
 
 #先处理创建一些必要的目录
@@ -66,7 +79,7 @@ pre_command:
 
 #自动匹配 OBJECTS 中需要的 *.o 目标文件	
 $(BIN_DIR)%.o: %.c*
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CC) $(FLAGS) -c -fPIC $< -o $@
 
 #指定伪目标
 .PHONY:clean clean_objs
